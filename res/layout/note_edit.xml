@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="@color/background"
 	>
 	
 	<EditText android:id="@+id/body"
-	    android:layout_width="match_parent"
-		android:layout_height="fill_parent"
-		android:layout_weight="1"
-		android:scrollbars="vertical"
-		android:background="#0FFF"
-		android:gravity="top"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:scrollbars="vertical"
+        android:background="#0FFF"
+        android:gravity="top"
         android:textColor="@color/foreground"
         android:paddingTop="2mm"
         android:paddingBottom="2mm"
         android:paddingLeft="1mm"
         android:paddingRight="1mm"
         android:textSize="16sp"
+        android:inputType="textCapSentences|textMultiLine"
 		/>
 
 </LinearLayout>
