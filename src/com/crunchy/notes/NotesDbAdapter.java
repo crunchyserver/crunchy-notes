@@ -16,6 +16,9 @@
 
 package com.crunchy.notes;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -39,21 +42,26 @@ public class NotesDbAdapter {
     public static final String KEY_TITLE = "title";
     public static final String KEY_BODY = "body";
     public static final String KEY_ROWID = "_id";
+    public static final String KEY_MODIFIED = "modified_at";
 
     private static final String TAG = "NotesDbAdapter";
     private DatabaseHelper mDbHelper;
     private SQLiteDatabase mDb;
-
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    
     /**
      * Database creation sql statement
      */
-    private static final String DATABASE_CREATE =
+    private static final String DATABASE_CREATE_2 =
         "create table notes (_id integer primary key autoincrement, "
         + "title text not null, body text not null);";
-
+    private static final String DATABASE_CREATE_3 =
+    	"create table notesthree (_id integer primary key autoincrement, "
+    	+ "title text not null, body text not null, modified_at integer not null);";
+    
     private static final String DATABASE_NAME = "data";
-    private static final String DATABASE_TABLE = "notes";
-    private static final int DATABASE_VERSION = 2;
+    private static final String DATABASE_TABLE = "notesthree";
+    private static final int DATABASE_VERSION = 3;
 
     private final Context mCtx;
 
@@ -66,15 +74,25 @@ public class NotesDbAdapter {
         @Override
         public void onCreate(SQLiteDatabase db) {
 
-            db.execSQL(DATABASE_CREATE);
+            db.execSQL(DATABASE_CREATE_3);
         }
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
-                    + newVersion + ", which will destroy all old data");
-            db.execSQL("DROP TABLE IF EXISTS notes");
-            onCreate(db);
+                    + newVersion + ", which will attempt to migrate all old data");
+            
+            if (oldVersion <= 2 && newVersion >= 3) {
+            	// we can't alter the table, since we're not allowed to have functional
+            	// arguments for new rows default values. So, we define a new one and
+            	// copy the data across, before dropping the old.
+                onCreate(db);
+                db.execSQL(
+                    "INSERT INTO notesthree (title, body, modified_at) SELECT title, body, "
+                    + (new Date()).getTime() + " FROM notes;"
+                );
+                db.execSQL("DROP TABLE notes;");
+            }
         }
     }
 
@@ -121,7 +139,8 @@ public class NotesDbAdapter {
         ContentValues initialValues = new ContentValues();
         initialValues.put(KEY_TITLE, title);
         initialValues.put(KEY_BODY, body);
-
+        initialValues.put(KEY_MODIFIED, (new Date()).getTime());
+        
         return mDb.insert(DATABASE_TABLE, null, initialValues);
     }
 
@@ -144,7 +163,7 @@ public class NotesDbAdapter {
     public Cursor fetchAllNotes() {
 
         return mDb.query(DATABASE_TABLE, new String[] {KEY_ROWID, KEY_TITLE,
-                KEY_BODY}, null, null, null, null, null);
+                KEY_BODY}, null, null, null, null, KEY_MODIFIED + " DESC");
     }
 
     /**
@@ -179,9 +198,10 @@ public class NotesDbAdapter {
      * @return true if the note was successfully updated, false otherwise
      */
     public boolean updateNote(long rowId, String title, String body) {
-        ContentValues args = new ContentValues();
+    	ContentValues args = new ContentValues();
         args.put(KEY_TITLE, title);
         args.put(KEY_BODY, body);
+        args.put(KEY_MODIFIED, (new Date()).getTime());
 
         return mDb.update(DATABASE_TABLE, args, KEY_ROWID + "=" + rowId, null) > 0;
     }
